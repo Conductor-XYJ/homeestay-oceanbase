@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:2881/homeestay_ustb?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root@sys
+      - SPRING_DATASOURCE_PASSWORD=root_password
+      - SPRING_REDIS_HOST=redis
+  
+  db:
+    image: oceanbase/oceanbase-ce:latest
+    environment:
+      - OB_ROOT_PASSWORD=root_password
+      - OB_TENANT_PASSWORD=tenant_password
+    ports:
+      - "2881:2881"
+    volumes:
+      - db_data:/root/ob
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "2881"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data:

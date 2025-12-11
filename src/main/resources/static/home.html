@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>民宿系统 - 首页</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">民宿预订系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item"><a class="nav-link active" href="home.html">首页</a></li>
+                    <li class="nav-item"><a class="nav-link" href="my-favorites.html">我的收藏</a></li>
+                    <li class="nav-item"><a class="nav-link" href="my-orders.html">我的订单</a></li>
+                    <li class="nav-item"><a class="nav-link" href="my-properties.html">房源管理</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text text-white me-3" id="userInfo"></span>
+                    <button class="btn btn-outline-light btn-sm" id="logoutBtn">退出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3>热门区域</h3>
+                    <div class="input-group w-50">
+                        <input type="text" class="form-control" id="searchInput" placeholder="搜索当前区域的房源...">
+                        <button class="btn btn-primary" type="button" id="searchBtn">搜索</button>
+                    </div>
+                </div>
+                <div id="regionList" class="d-flex flex-wrap gap-2">
+                    <!-- 区域列表 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h3>房源列表</h3>
+                <div id="propertyList" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                    <!-- 房源列表 -->
+                    <p class="text-muted">请选择一个区域查看房源</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 房源详情模态框 -->
+    <div class="modal fade" id="propertyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">房源详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- 详情内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            $('#userInfo').text(`欢迎, ${user.userName}`);
+
+            let currentProperties = []; // 存储当前区域的所有房源
+
+            // 加载区域
+            loadRegions();
+
+            function loadRegions() {
+                $.get('/api/region/get-region-all', function(res) {
+                    if (res.flag) {
+                        const regions = res.data;
+                        let html = '';
+                        regions.forEach(r => {
+                            html += `<button class="btn btn-outline-primary region-btn" data-id="${r.regionId}">${r.regionName}</button>`;
+                        });
+                        $('#regionList').html(html);
+                    }
+                });
+            }
+
+            // 区域点击事件
+            $(document).on('click', '.region-btn', function() {
+                $('.region-btn').removeClass('active');
+                $(this).addClass('active');
+                const regionId = $(this).data('id');
+                loadProperties(regionId);
+            });
+
+            // 搜索功能 (前端过滤)
+            $('#searchBtn').click(function() {
+                const keyword = $('#searchInput').val().trim().toLowerCase();
+                if (!keyword) {
+                    renderProperties(currentProperties);
+                    return;
+                }
+                const filtered = currentProperties.filter(p => {
+                    const prop = p.property || p;
+                    return prop.title.toLowerCase().includes(keyword) || 
+                           (prop.description && prop.description.toLowerCase().includes(keyword));
+                });
+                renderProperties(filtered);
+            });
+
+            function loadProperties(regionId) {
+                $.get(`/api/property/get-property-rating-all-by-reginId/${regionId}`, function(res) {
+                    if (res.flag) {
+                        currentProperties = res.data || [];
+                        renderProperties(currentProperties);
+                    }
+                });
+            }
+
+            function renderProperties(properties) {
+                let html = '';
+                if (properties && properties.length > 0) {
+                    properties.forEach(p => {
+                        const prop = p.property || p; 
+                        const rating = p.rating || '暂无评分';
+                        
+                        html += `
+                            <div class="col">
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${prop.title}</h5>
+                                        <p class="card-text text-truncate">${prop.description || '暂无描述'}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary view-detail" data-id="${prop.propertyId}">查看详情</button>
+                                            </div>
+                                            <small class="text-muted">评分: ${rating}</small>
+                                            <small class="text-primary">¥${prop.rent}/晚</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<p class="text-muted p-3">该区域暂无房源或未找到匹配结果</p>';
+                }
+                $('#propertyList').html(html);
+            }
+
+            // 查看详情
+            $(document).on('click', '.view-detail', function() {
+                const propertyId = $(this).data('id');
+                $.get(`/api/property/get-property-info-by-id/${propertyId}`, function(res) {
+                    if (res.flag) {
+                        const data = res.data;
+                        
+                        // 构建图片轮播
+                        let carouselHtml = '';
+                        if (data.imageList && data.imageList.length > 0) {
+                            carouselHtml = `
+                                <div id="propCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
+                                    <div class="carousel-inner">
+                                        ${data.imageList.map((img, index) => `
+                                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                                <img src="${img.imageUrl}" class="d-block w-100" style="height: 300px; object-fit: cover;" alt="房源图片">
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#propCarousel" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Previous</span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#propCarousel" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Next</span>
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            carouselHtml = '<div class="alert alert-secondary">暂无图片</div>';
+                        }
+
+                        let html = `
+                            ${carouselHtml}
+                            <h4>${data.title}</h4>
+                            <p><strong>地址:</strong> ${data.address}</p>
+                            <p><strong>价格:</strong> ¥${data.rent} / ${data.rentalType}</p>
+                            <p><strong>描述:</strong> ${data.description}</p>
+                            <hr>
+                            <h5>配套设施</h5>
+                            <p>${data.facilityList ? data.facilityList.map(f => f.facilityName).join(', ') : '无'}</p>
+                            <hr>
+                            <h5>评价</h5>
+                            <ul class="list-group list-group-flush">
+                                ${data.reviewList && data.reviewList.length > 0 ? 
+                                    data.reviewList.map(r => `<li class="list-group-item">${r.content || '无内容'} - <small>${r.rating}分</small></li>`).join('') 
+                                    : '<li class="list-group-item">暂无评价</li>'}
+                            </ul>
+                        `;
+                        $('#modalBody').html(html);
+                        
+                        // 添加底部按钮
+                        const footerHtml = `
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-danger" id="addFavBtn" data-id="${data.propertyId}">收藏</button>
+                                <a href="order-confirm.html?propertyId=${data.propertyId}" class="btn btn-primary">立即预订</a>
+                            </div>
+                        `;
+                        $('.modal-footer').remove(); // 移除旧的
+                        $('.modal-content').append(footerHtml);
+
+                        new bootstrap.Modal(document.getElementById('propertyModal')).show();
+                    }
+                });
+            });
+
+            // 收藏功能
+            $(document).on('click', '#addFavBtn', function() {
+                const pid = $(this).data('id');
+                $.ajax({
+                    url: '/api/favorite/add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ userId: user.userId, propertyId: pid }),
+                    success: function(res) {
+                        alert(res.message || (res.flag ? '收藏成功' : '收藏失败'));
+                    }
+                });
+            });
+
+            // 退出登录
+            $('#logoutBtn').click(function() {
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

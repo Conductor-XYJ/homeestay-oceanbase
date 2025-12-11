@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>确认订单</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>确认预订信息</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5 id="propertyTitle" class="mb-3">加载中...</h5>
+                        <p class="text-muted">价格: <span id="propertyPrice" class="text-danger fw-bold"></span> /晚</p>
+                        <hr>
+                        <form id="orderForm">
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label class="form-label">入住日期</label>
+                                    <input type="date" class="form-control" id="checkInDate" required>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">退房日期</label>
+                                    <input type="date" class="form-control" id="checkOutDate" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">入住人数</label>
+                                <input type="number" class="form-control" id="numGuests" min="1" value="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">联系人姓名</label>
+                                <input type="text" class="form-control" id="contactName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">联系电话</label>
+                                <input type="tel" class="form-control" id="phone" required>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                总价: ¥<span id="totalPrice">0</span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-lg">提交订单</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                alert('请先登录');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            let rentPrice = 0;
+
+            // 加载房源信息
+            $.get(`/api/property/get-property-info-by-id/${propertyId}`, function(res) {
+                if(res.flag) {
+                    const prop = res.data;
+                    $('#propertyTitle').text(prop.title);
+                    $('#propertyPrice').text('¥' + prop.rent);
+                    rentPrice = prop.rent;
+                    
+                    // 预填用户信息
+                    $('#contactName').val(user.userName);
+                    $('#phone').val(user.userPhone);
+                }
+            });
+
+            // 计算总价
+            function calculateTotal() {
+                const start = new Date($('#checkInDate').val());
+                const end = new Date($('#checkOutDate').val());
+                if(start && end && end > start) {
+                    const days = (end - start) / (1000 * 60 * 60 * 24);
+                    $('#totalPrice').text((days * rentPrice).toFixed(2));
+                } else {
+                    $('#totalPrice').text('0');
+                }
+            }
+
+            $('#checkInDate, #checkOutDate').change(calculateTotal);
+
+            // 提交订单
+            $('#orderForm').submit(function(e) {
+                e.preventDefault();
+                const data = {
+                    propertyId: propertyId,
+                    userId: user.userId,
+                    checkInDate: $('#checkInDate').val(),
+                    checkOutDate: $('#checkOutDate').val(),
+                    numGuests: $('#numGuests').val(),
+                    contactName: $('#contactName').val(),
+                    phone: $('#phone').val(),
+                    price: $('#totalPrice').text(),
+                    orderStatus: '待支付' // 初始状态
+                };
+
+                $.ajax({
+                    url: '/api/orders/add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(res) {
+                        if(res.flag) {
+                            // 假设后端返回的 data 是 orderId 或者包含 orderId
+                            // 如果后端只返回 boolean，我们可能无法跳转到详情页，只能提示成功
+                            // 根据 OrdersController，add 返回 Result。通常 data 会是新创建的对象或 ID
+                            // 假设 res.data 是 null (常见情况)，我们只能跳转回首页或提示
+                            alert('订单提交成功！');
+                            window.location.href = 'home.html';
+                        } else {
+                            alert(res.message);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

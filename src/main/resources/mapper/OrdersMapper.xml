@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ustb.boot.mapper.OrdersMapper">
+
+    <select id="findOrdersInfoById" parameterType="String" resultType="com.ustb.boot.pojo.OrdersPropertyDTO">
+        select t_orders.*,t_property.title,t_property.address,t_property.longitude,t_property.latitude
+        from t_orders  LEFT JOIN t_property ON t_orders.property_id = t_property.property_id
+        where t_orders.order_id = #{ordersId}
+    </select>
+
+
+</mapper>

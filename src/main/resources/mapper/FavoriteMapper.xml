@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ustb.boot.mapper.FavoriteMapper">
+    
+    <select id="getFavoritePropertyByUserId" parameterType="string" resultType="property">
+        select t_property.* from t_favorite
+               LEFT JOIN t_property on t_favorite.property_id = t_property.property_id
+               where t_favorite.user_id = #{userId}
+    </select>
+
+    <select id="getFavoritePropertyByUserIdAndLikeTitle" resultType="property">
+        select t_property.* from t_favorite
+               LEFT JOIN t_property on t_favorite.property_id = t_property.property_id
+               where t_favorite.user_id = #{userId} and t_property.title LIKE #{likeTitle}
+    </select>
+
+</mapper>

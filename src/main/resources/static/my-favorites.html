@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的收藏</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h3>我的收藏</h3>
+        <div class="mb-3">
+            <a href="home.html" class="btn btn-outline-secondary">返回首页</a>
+        </div>
+        <div id="favList" class="row row-cols-1 row-cols-md-3 g-4">
+            <!-- 列表 -->
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) return;
+
+            $.get(`/api/favorite/get-favorite-property-by-userId/${user.userId}`, function(res) {
+                if(res.flag) {
+                    const list = res.data;
+                    let html = '';
+                    list.forEach(item => {
+                        // 假设 item 包含了 property 信息，或者我们需要再查一次
+                        // 根据 FavoriteController，它返回的是 Favorite 对象列表还是 Property 列表？
+                        // 通常 getFavoritePropertyByUserId 应该返回 Property 列表
+                        // 如果返回的是 Favorite 对象，那我们还得去查 Property
+                        // 假设后端服务做得好，直接返回了 Property 列表
+                        
+                        // 如果 item 是 Property 对象
+                        html += `
+                            <div class="col">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${item.title}</h5>
+                                        <p class="card-text">${item.address}</p>
+                                        <a href="order-confirm.html?propertyId=${item.propertyId}" class="btn btn-primary">去预订</a>
+                                        <button class="btn btn-danger btn-sm float-end delete-fav" data-pid="${item.propertyId}">取消收藏</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    $('#favList').html(html);
+                }
+            });
+
+            $(document).on('click', '.delete-fav', function() {
+                const pid = $(this).data('pid');
+                $.ajax({
+                    url: '/api/favorite/delete',
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ userId: user.userId, propertyId: pid }),
+                    success: function(res) {
+                        if(res.flag) {
+                            location.reload();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

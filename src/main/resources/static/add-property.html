@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布房源</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .preview-img { width: 100px; height: 100px; object-fit: cover; margin-right: 10px; margin-bottom: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4 mb-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">发布新房源</h4>
+            </div>
+            <div class="card-body">
+                <form id="addPropForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">房源标题</label>
+                        <input type="text" class="form-control" name="title" placeholder="给你的房源起个吸引人的名字" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">租金 (元/晚)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" class="form-control" name="rent" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">押金 (元)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" class="form-control" name="deposit" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">详细地址</label>
+                        <input type="text" class="form-control" name="address" placeholder="省/市/区/街道/门牌号" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">房源描述</label>
+                        <textarea class="form-control" name="description" rows="4" placeholder="介绍一下你的房源亮点..." required></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">所属区域</label>
+                            <select class="form-select" id="regionSelect" name="regionId" required>
+                                <option value="">请选择区域</option>
+                            </select>
+                            <input type="text" class="form-control mt-2" id="newRegionInput" placeholder="请输入新区域名称" style="display:none;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">出租类型</label>
+                            <select class="form-select" name="rentalType">
+                                <option value="日租">日租</option>
+                                <option value="月租">月租</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">卧室数量</label>
+                            <input type="number" class="form-control" name="bedrooms" value="1" min="0">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">床位数量</label>
+                            <input type="number" class="form-control" name="beds" value="1" min="0">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">卫生间</label>
+                            <input type="number" class="form-control" name="bathrooms" value="1" min="0">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">可住人数</label>
+                            <input type="number" class="form-control" name="capacity" value="2" min="1">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">配套设施</label>
+                        <div id="facilityList" class="d-flex flex-wrap gap-3 border p-3 rounded bg-light">
+                            <!-- 设施复选框 -->
+                            <span class="text-muted">加载中...</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">房源图片</label>
+                        <div class="input-group mb-2">
+                            <input type="file" class="form-control" id="imageInput" accept="image/*">
+                            <button class="btn btn-outline-secondary" type="button" id="uploadBtn">上传</button>
+                        </div>
+                        <div id="imagePreview" class="d-flex flex-wrap">
+                            <!-- 图片预览区 -->
+                        </div>
+                        <small class="text-muted">请上传清晰的房源照片，第一张将作为封面。</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">立即发布</button>
+                        <a href="home.html" class="btn btn-outline-secondary">返回首页</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const uploadedImages = []; // 存储已上传图片的URL
+
+            // 1. 加载区域
+            $.get('/api/region/get-region-all', function(res) {
+                if(res.flag) {
+                    res.data.forEach(r => {
+                        $('#regionSelect').append(`<option value="${r.regionId}">${r.regionName}</option>`);
+                    });
+                    // 添加“其他/新增”选项
+                    $('#regionSelect').append(`<option value="NEW_REGION">+ 新增区域</option>`);
+                }
+            });
+
+            // 监听区域选择变化
+            $('#regionSelect').change(function() {
+                if($(this).val() === 'NEW_REGION') {
+                    $('#newRegionInput').show().prop('required', true);
+                } else {
+                    $('#newRegionInput').hide().prop('required', false).val('');
+                }
+            });
+
+            // 2. 加载设施
+            $.get('/api/facility/get-facility-all', function(res) {
+                if(res.flag) {
+                    let html = '';
+                    res.data.forEach(f => {
+                        html += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="${f.facilityId}" id="fac_${f.facilityId}">
+                                <label class="form-check-label" for="fac_${f.facilityId}">${f.facilityName}</label>
+                            </div>
+                        `;
+                    });
+                    $('#facilityList').html(html);
+                } else {
+                    $('#facilityList').html('<span class="text-danger">加载失败</span>');
+                }
+            });
+
+            // 3. 图片上传
+            $('#uploadBtn').click(function() {
+                const fileInput = $('#imageInput')[0];
+                if (fileInput.files.length === 0) {
+                    alert('请先选择一张图片');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const btn = $(this);
+                btn.prop('disabled', true).text('上传中...');
+
+                $.ajax({
+                    url: '/api/oss/upload',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        btn.prop('disabled', false).text('上传');
+                        if(res.flag) {
+                            const url = res.data; // 假设返回的是图片URL
+                            uploadedImages.push(url);
+                            $('#imagePreview').append(`<img src="${url}" class="preview-img shadow-sm">`);
+                            $('#imageInput').val(''); // 清空选择
+                        } else {
+                            alert(res.message || '上传失败');
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).text('上传');
+                        alert('上传出错，请检查网络');
+                    }
+                });
+            });
+
+            // 4. 表单提交
+            $('#addPropForm').submit(function(e) {
+                e.preventDefault();
+                
+                // 防止重复提交
+                const submitBtn = $('#submitBtn');
+                submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 发布中...');
+
+                const formData = {};
+                $(this).serializeArray().forEach(item => formData[item.name] = item.value);
+                
+                // 处理新增区域
+                if (formData.regionId === 'NEW_REGION') {
+                    formData.regionId = '';
+                    formData.newRegionName = $('#newRegionInput').val();
+                }
+                
+                formData.userId = user.userId;
+                formData.longitude = 116.40; // 默认值
+                formData.latitude = 39.90;   // 默认值
+
+                // 收集选中的设施
+                const facilities = [];
+                $('#facilityList input:checked').each(function() {
+                    facilities.push({ facilityId: $(this).val() });
+                });
+                formData.facilityList = facilities;
+
+                // 收集图片
+                const images = uploadedImages.map(url => ({ imageUrl: url }));
+                formData.imageList = images;
+
+                $.ajax({
+                    url: '/api/property/add-property',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(res) {
+                        if(res.flag) {
+                            alert('发布成功！');
+                            window.location.href = 'home.html';
+                        } else {
+                            alert(res.message);
+                            submitBtn.prop('disabled', false).text('立即发布');
+                        }
+                    },
+                    error: function() {
+                        alert('发布失败，请稍后重试');
+                        submitBtn.prop('disabled', false).text('立即发布');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

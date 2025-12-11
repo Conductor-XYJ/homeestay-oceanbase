@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ustb.boot.mapper.PropertyMapper">
+
+    <select id="getPropertyAndRatingByReginId" parameterType="string" resultType="propertyRatingDTO">
+        select t_property.*,avg(t_review.rating) as rating from t_property
+            LEFT JOIN t_review on t_property.property_id = t_review.property_id
+            where t_property.region_id = #{reginId}
+            GROUP BY t_property.property_id
+            ORDER BY  avg(t_review.rating) desc
+            limit 2
+    </select>
+
+    <select id="getPropertyAndRatingAllByReginId" parameterType="string" resultType="propertyRatingDTO">
+        select t_property.*,avg(t_review.rating) as rating from t_property
+        LEFT JOIN t_review on t_property.property_id = t_review.property_id
+        where t_property.region_id = #{reginId}
+        GROUP BY t_property.property_id
+        ORDER BY  avg(t_review.rating) desc
+    </select>
+
+    <resultMap id="propertyMap" type="com.ustb.boot.pojo.Property">
+        <id property="propertyId" column="property_id"/>
+        <result property="title" column="title"/>
+        <result property="address" column="address"/>
+        <result property="deposit" column="deposit"/>
+        <result property="rent" column="rent"/>
+        <result property="regionId" column="region_id"/>
+        <result property="rentalType" column="rental_type"/>
+        <result property="description" column="description"/>
+        <result property="userId" column="user_id"/>
+        <result property="capacity" column="capacity"/>
+        <result property="bedrooms" column="bedrooms"/>
+        <result property="beds" column="beds"/>
+        <result property="bathrooms" column="bathrooms"/>
+        <result property="area" column="area"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <association property="region" javaType="com.ustb.boot.pojo.Region">
+            <id property="regionId" column="region_id"/>
+            <result property="regionName" column="region_name"/>
+        </association>
+        <collection property="facilityList" ofType="com.ustb.boot.pojo.Facility">
+            <id property="facilityId" column="facility_id"/>
+            <result property="facilityName" column="facility_name"/>
+        </collection>
+        <collection property="imageList" ofType="com.ustb.boot.pojo.Image">
+            <id property="imageId" column="image_id"/>
+            <result property="imageUrl" column="image_url"/>
+        </collection>
+        <collection property="reviewList" ofType="com.ustb.boot.pojo.Review">
+            <id property="reviewId" column="review_id"/>
+            <result property="userId" column="review_user_id"/>
+            <result property="reviewUserName" column="review_user_name"/>
+            <result property="content" column="content"/>
+            <result property="rating" column="rating"/>
+        </collection>
+    </resultMap>
+    <select id="getPropertyByPropertyId" parameterType="string" resultMap="propertyMap">
+    select p.*,
+    r.region_id,
+    r.region_name,
+           f.facility_id,
+           f.facility_name,
+           i.image_id,
+           i.image_url,
+           rv.review_id,
+           rv.user_id as review_user_id,
+           tu.user_name as review_user_name,
+           rv.content,
+           rv.rating
+    from t_property p
+             LEFT JOIN t_region r ON p.region_id=r.region_id
+             LEFT JOIN t_property_facility pf ON p.property_id=pf.property_id
+             LEFT JOIN t_facility f ON pf.facility_id=f.facility_id
+             LEFT JOIN t_property_image pi ON pi.property_id=p.property_id
+             LEFT JOIN t_image i ON pi.image_id=i.image_id
+             LEFT JOIN t_review rv ON p.property_id=rv.property_id
+             LEFT JOIN t_user tu ON rv.user_id=tu.user_id
+    where p.property_id=#{propertyId}
+    </select>
+
+
+</mapper>

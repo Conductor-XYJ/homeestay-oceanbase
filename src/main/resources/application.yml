@@ -1,0 +1,29 @@
+spring:
+  redis:
+    host: 127.0.0.1  #redis服务器的地址
+    port: 6379          #端口号
+    database: 0        #redis当前使用的数据库
+    password:         #redis的连接密码
+    lettuce:
+      pool:
+        max-active: 8     #连接池中最大的数量
+        max-idle: 8       #连接池中的最大空闲数量
+        min-idle: 0       #连接池中最小空闲数量
+        max-wait: -1ms    #最大的阻塞等待时间   负数表示没有限制
+    connect-timeout: 5000ms     #最大连接的超时时间
+    timeout: 5000ms            #数据读取的最大超时时间
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:2881/homeestay_ustb?useUnicode=true&characterEncoding=utf-8&useSSL=false
+    username: root@sys
+    password: 
+    type: com.zaxxer.hikari.HikariDataSource
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.ustb.boot.pojo
+  global-config:
+    db-config:
+      table-prefix: t_   #设置mp对应的数据库都是t_开头
+      id-type: assign_id  #设置mp使用雪花算法作为主键
