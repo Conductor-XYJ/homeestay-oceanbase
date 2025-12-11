@@ -22,6 +22,7 @@ services:
       - "2881:2881"
     volumes:
       - db_data:/root/ob
+      - ./homeestay_ustb.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "2881"]
       interval: 10s
