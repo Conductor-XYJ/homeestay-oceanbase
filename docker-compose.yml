@@ -1,17 +1,22 @@
-version: '3.8'
+﻿version: '3.8'
 services:
   app:
     build: .
     ports:
       - "8080:8080"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:2881/homeestay_ustb?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=root@sys
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_REDIS_HOST=redis
+    volumes:
+      - ./uploaded:/uploaded
+    restart: always
   
   db:
     image: oceanbase/oceanbase-ce:latest
@@ -22,12 +27,26 @@ services:
       - "2881:2881"
     volumes:
       - db_data:/root/ob
-      - ./homeestay_ustb.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "2881"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  db-init:
+    image: alpine:3.18
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./homeestay_ustb.sql:/init.sql
+    command: >
+      sh -c "apk add --no-cache mysql-client &&
+      echo 'Waiting for database...' &&
+      until mysql -h db -P 2881 -u root@sys -e 'select 1'; do sleep 2; done &&
+      echo 'Database is up, importing data...' &&
+      mysql -h db -P 2881 -u root@sys -e 'CREATE DATABASE IF NOT EXISTS homeestay_ustb; USE homeestay_ustb; SOURCE /init.sql;' &&
+      echo 'Data import finished.'"
 
   redis:
     image: redis:alpine

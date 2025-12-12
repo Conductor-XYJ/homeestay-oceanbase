@@ -91,19 +91,19 @@ CREATE TABLE `t_image`  (
 -- ----------------------------
 -- Records of t_image
 -- ----------------------------
-INSERT INTO `t_image` VALUES ('1868215751364636673', 'http://example.com/image11.jpg');
-INSERT INTO `t_image` VALUES ('1868215751435939842', 'http://example.com/image12.jpg');
-INSERT INTO `t_image` VALUES ('1868215751435939843', 'http://example.com/image13.jpg');
-INSERT INTO `t_image` VALUES ('I001', 'http://example.com/image1.jpg');
-INSERT INTO `t_image` VALUES ('I002', 'http://example.com/image2.jpg');
-INSERT INTO `t_image` VALUES ('I003', 'http://example.com/image3.jpg');
-INSERT INTO `t_image` VALUES ('I004', 'http://example.com/image4.jpg');
-INSERT INTO `t_image` VALUES ('I005', 'http://example.com/image5.jpg');
-INSERT INTO `t_image` VALUES ('I006', 'http://example.com/image6.jpg');
-INSERT INTO `t_image` VALUES ('I007', 'http://example.com/image7.jpg');
-INSERT INTO `t_image` VALUES ('I008', 'http://example.com/image8.jpg');
-INSERT INTO `t_image` VALUES ('I009', 'http://example.com/image9.jpg');
-INSERT INTO `t_image` VALUES ('I010', 'http://example.com/image10.jpg');
+INSERT INTO `t_image` VALUES ('1868215751364636673', 'http://localhost:8080/uploaded/11.png');
+INSERT INTO `t_image` VALUES ('1868215751435939842', 'http://localhost:8080/uploaded/12.png');
+INSERT INTO `t_image` VALUES ('1868215751435939843', 'http://localhost:8080/uploaded/13.png');
+INSERT INTO `t_image` VALUES ('I001', 'http://localhost:8080/uploaded/1.png');
+INSERT INTO `t_image` VALUES ('I002', 'http://localhost:8080/uploaded/2.png');
+INSERT INTO `t_image` VALUES ('I003', 'http://localhost:8080/uploaded/3.png');
+INSERT INTO `t_image` VALUES ('I004', 'http://localhost:8080/uploaded/4.png');
+INSERT INTO `t_image` VALUES ('I005', 'http://localhost:8080/uploaded/5.png');
+INSERT INTO `t_image` VALUES ('I006', 'http://localhost:8080/uploaded/6.png');
+INSERT INTO `t_image` VALUES ('I007', 'http://localhost:8080/uploaded/7.png');
+INSERT INTO `t_image` VALUES ('I008', 'http://localhost:8080/uploaded/8.png');
+INSERT INTO `t_image` VALUES ('I009', 'http://localhost:8080/uploaded/9.png');
+INSERT INTO `t_image` VALUES ('I010', 'http://localhost:8080/uploaded/10.png');
 
 -- ----------------------------
 -- Table structure for t_orders
